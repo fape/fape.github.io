@@ -33,9 +33,11 @@ Error: A fatal exception has occurred. Program will exit.
 ```
 
 Végül az api szintű `config.yaml`-be került:
+(A doksi nem említi, vagy nem jött szembe, de egy pull request](https://github.com/OpenAPITools/openapi-generator/pull/8339) igen)
 
 ```yaml
 globalProperties:
+    debugModels: true
     debugOperations: true
 ```
 
@@ -48,7 +50,7 @@ Végül kombinálva a két ötletet, ez került az `api.service.mustache` templa
 ```mustache
 metadata: { 
     operationId: '{{{moduleClassName}}}.{{{operationIdCamelCase}}}', 
-	operationName: '{{{httpMethod}}} {{{contextPath}}}{{{path}}}'
+    operationName: '{{{httpMethod}}} {{{contextPath}}}{{{path}}}'
 }
 ```
 <!-- {% endraw %} -->
