@@ -49,7 +49,7 @@ Végül kombinálva a két ötletet, ez került az `api.service.mustache` templa
 <!-- {% raw %} -->
 ```mustache
 metadata: { 
-    operationId: '{{{moduleClassName}}}.{{{operationIdCamelCase}}}', 
+    operationId: '{{{classname}}}.{{{operationIdCamelCase}}}', 
     operationName: '{{{httpMethod}}} {{{contextPath}}}{{{path}}}'
 }
 ```
