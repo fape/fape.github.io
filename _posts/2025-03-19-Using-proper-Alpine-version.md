@@ -1,57 +1,52 @@
 ---
 layout: post
-title: Logoláshoz OpenAPITools-szal egyedi Operation/api generálás Node.js esetén
+title: Megfelelő Alpine linux verzió használata csomag telepítéshez CI/CD vagy Docker esetén
 ---
 
 # Probléma
-Egy Node.js-es, azonbelül is NestJS-s projektben szerettem volna a backend hívások logolását kiegészíteni a "logikai" végpont infókkal. Könnyebb legyen aggregálni és tendenciákat vizsgálni.
-Pl a swagger/openapi-s példa Pet store esetén, ha a hívás `GET https://petstore3.swagger.io/api/v3/pet/123` akkor a logban `GET api/v3/pet/{id}` (vagy hasonló) kerüljön. 
+Hogyan lehet az aktuális [Alpine linux](https://alpinelinux.org/) verzió számot megkapni és felhasználni saját apk (proxy) repo (pl [artifactory](https://jfrog.com/artifactory/)) esetén. Pl ha az image version csak `22-alpine`. 
 
-# Előfeltételek
-* [@openapitools/openapi-generator-cli](https://www.npmjs.com/package/@openapitools/openapi-generator-cli) van használva.
-  * `typescript-nestjs` generátorral
-  * DE egyedi `Mustache` templatekkel
-  
 # Ötlet #1
-Generáláskor rakjunk plusz infókat a `service`-be.
-
-A `path` már most is használva van a template fájlban. Amiről kiderül hogy a [`TypeScriptNestjsClientCodegen.java`](https://github.com/OpenAPITools/openapi-generator/blob/d30220b8dfe60dacbdf01e865150765e6ae6e431/modules/openapi-generator/src/main/java/org/openapitools/codegen/languages/TypeScriptNestjsClientCodegen.java#L297)-ból, hogy felül van írva az eredeti interface leíróhoz képest.
-
-Azaz `GET api/v3/pet/${encodeURIComponent(String(id))}` lesz.
-
-# Ötlet #2
-Milyen más template változók vannak? 
-A [`CodegenOperation.java`](
-https://github.com/OpenAPITools/openapi-generator/blob/d30220b8dfe60dacbdf01e865150765e6ae6e431/modules/openapi-generator/src/main/java/org/openapitools/codegen/CodegenOperation.java#L25)-ból kiderült pár igéretes. Pl `operationId` (régi nevén `nickname`, ez is volt már használva template-ben) valamint `operationIdCamelCase`.
-
-Az [openapi-generator Debugging Templates](https://github.com/OpenAPITools/openapi-generator/blob/master/docs/debugging.md#templates) doksi szerint lehet a  `JAVA_OPTS` környezeti változóval több infót kinyerni. pl `export JAVA_OPTS="--global-property debugOperations"`. Csak erre hiba jött:
-
-```shell
-Error: Unrecognized option: --global-property
-Error: Could not create the Java Virtual Machine.
-Error: A fatal exception has occurred. Program will exit.
-```
-
-Végül az api szintű `config.yaml`-be került:
-(A doksi nem említi, vagy nem jött szembe, de egy pull request](https://github.com/OpenAPITools/openapi-generator/pull/8339) igen)
-
-```yaml
-globalProperties:
-    debugModels: true
-    debugOperations: true
-```
-
-Ennek hatására kaptam egy 38 000 soros json-t, amiből látszott, hogy miből lehet választani a templateben.
-
-# Megoldás
-Végül kombinálva a két ötletet, ez került az `api.service.mustache` template fájlban:
-
-<!-- {% raw %} -->
-```mustache
-metadata: { 
-    operationId: '{{{classname}}}.{{{operationIdCamelCase}}}', 
-    operationName: '{{{httpMethod}}} {{{contextPath}}}{{{path}}}'
+Mit használnak Alpine-ék?
+[Ezt:](https://gitlab.alpinelinux.org/alpine/alpine-conf/-/blob/master/setup-apkrepos.in?ref_type=heads#L127)
+```bash
+get_alpine_release() {
+	# use the main version already configured, or get the version from /etc/alpine-release
+	local version="$(grep -Eom1 '[^/]+/main/?$' "${ROOT}"etc/apk/repositories 2>/dev/null | grep -Eo '^[^/]+' \
+		|| cat "${ROOT}"etc/alpine-release 2>/dev/null)"
+	case "$version" in
+		*_git*|*_alpha*) release="edge";;
+		[0-9]*.[0-9]*.[0-9]*)
+			# release in x.y.z format, cut last digit
+			release=v${version%.[0-9]*};;
+		v[0-9]*.[0-9]*)
+            # release in vx.y format, keep as is
+			release="${version}";;
+		*)	# fallback to edge
+			release="edge";;
+	esac
 }
 ```
-<!-- {% endraw %} -->
 
+# Megoldás 1
+Ebből saját egyszerűsített megoldás CI/CD-hez alpine-s node-s image-hez
+
+```yaml
+build:
+  image: ${BASE_DOCKER_IMAGE_REPOSITORY}/docker-remote/node:22-alpine
+  stage: build
+  #when: manual
+  before_script:
+    - repo_version="$(grep -Eom1 '[^/]+/main/?$' /etc/apk/repositories 2>/dev/null | grep -Eo '^[^/]+')"
+    - echo "https://sajat_artifactory/${repo_version}/main" > /etc/apk/repositories
+    - echo "https://sajat_artifactory/${repo_version}/community" >> /etc/apk/repositories
+    - apk update --no-cache
+    - apk add --no-cache zip rsync
+
+```
+# Megoldás 2
+Vagy másik megoldás pl Docker fájlhoz
+```bash
+echo -e "https://sajat_artifactoryv$(cut -d . -f 1,2 < /etc/alpine-release)/community\n
+	https://sajat_artifactory/v$(cut -d . -f 1,2 < /etc/alpine-release)/main" > /etc/apk/repositories
+```
