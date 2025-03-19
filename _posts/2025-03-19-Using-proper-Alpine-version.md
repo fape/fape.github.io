@@ -33,13 +33,13 @@ Ebből saját egyszerűsített megoldás CI/CD-hez alpine-s node-s image-hez
 
 ```yaml
 build:
-  image: ${BASE_DOCKER_IMAGE_REPOSITORY}/docker-remote/node:22-alpine
+  image: node:22-alpine
   stage: build
   #when: manual
   before_script:
     - repo_version="$(grep -Eom1 '[^/]+/main/?$' /etc/apk/repositories 2>/dev/null | grep -Eo '^[^/]+')"
-    - echo "https://sajat_artifactory/${repo_version}/main" > /etc/apk/repositories
-    - echo "https://sajat_artifactory/${repo_version}/community" >> /etc/apk/repositories
+    - echo "https://sajat_arti/${repo_version}/main" > /etc/apk/repositories
+    - echo "https://sajat_arti/${repo_version}/community" >> /etc/apk/repositories
     - apk update --no-cache
     - apk add --no-cache zip rsync
 
@@ -47,6 +47,6 @@ build:
 # Megoldás 2
 Vagy másik megoldás pl Docker fájlhoz
 ```bash
-echo -e "https://sajat_artifactoryv$(cut -d . -f 1,2 < /etc/alpine-release)/community\n
-	https://sajat_artifactory/v$(cut -d . -f 1,2 < /etc/alpine-release)/main" > /etc/apk/repositories
+echo -e "https://sajat_arti/v$(cut -d . -f 1,2 < /etc/alpine-release)/community\n
+	https://sajat_arti/v$(cut -d . -f 1,2 < /etc/alpine-release)/main" > /etc/apk/repositories
 ```
