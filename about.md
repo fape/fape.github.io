@@ -1,15 +1,10 @@
 ---
 layout: page
-title: About
+title: Oldalról
 permalink: /about/
 ---
 
-Some information about you!
+Helló, fape vagyok, problémákat oldok meg.
 
-### More Information
+Munkám során szembejött jó pár probléma, megoldandó feladat. Az izgalmasabbakról vagy amiket szeretnék megőrizni az utókornak szólnak a postok.
 
-A place to include any other types of information that you'd like to include about yourself.
-
-### Contact me
-
-[email@domain.com](mailto:email@domain.com)
