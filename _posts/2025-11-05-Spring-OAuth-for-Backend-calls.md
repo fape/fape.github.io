@@ -8,8 +8,8 @@ Spring boot update-nél már teljesen személyre szabott korábbi [OAuth2RestTem
 
 # Előfeltételek
 A szabványtól pár helyen eltérnek a végpontok, amiket használnunk kell:
-* POST helyett GET van használva, mint access mint refresh token-él.
-* Más headerben megy a basic auth.
+* POST helyett GET van használva, mind az access token-nél, mind a refresh token-nél
+* Más headerben megy a basic auth
 * Proxy-n keresztül kell menni az összes kérésnek
 * Cacheljük a tokeneket
 
